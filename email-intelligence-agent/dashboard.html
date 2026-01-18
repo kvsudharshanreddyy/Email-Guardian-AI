@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Intelligence Dashboard | Premium AI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --secondary: #a855f7;
+            --accent: #ec4899;
+            --success: #22c55e;
+            --danger: #ef4444;
+            --glass: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --bg: #030712;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: #f8fafc;
+            min-height: 100vh;
+            overflow-x: hidden;
+            display: flex;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+
+        /* Animated Background Blobs */
+        .bg-blobs {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+            filter: blur(100px);
+        }
+
+        .blob {
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0.4;
+            animation: float 20s infinite alternate;
+        }
+
+        .blob-1 {
+            width: 500px;
+            height: 500px;
+            background: var(--primary);
+            top: -100px;
+            right: -100px;
+        }
+
+        .blob-2 {
+            width: 600px;
+            height: 600px;
+            background: var(--secondary);
+            bottom: -200px;
+            left: -100px;
+            animation-delay: -5s;
+        }
+
+        .blob-3 {
+            width: 300px;
+            height: 300px;
+            background: var(--accent);
+            top: 40%;
+            left: 30%;
+            animation-delay: -10s;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translate(0, 0) scale(1);
+            }
+
+            33% {
+                transform: translate(30px, -50px) scale(1.1);
+            }
+
+            66% {
+                transform: translate(-20px, 20px) scale(0.9);
+            }
+
+            100% {
+                transform: translate(0, 0) scale(1);
+            }
+        }
+
+        .container {
+            max-width: 1100px;
+            width: 100%;
+            z-index: 1;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            background: linear-gradient(to right, #fff, #94a3b8);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+            filter: drop-shadow(0 0 20px rgba(99, 102, 241, 0.3));
+        }
+
+        .subtitle {
+            color: #94a3b8;
+            font-size: 1.1rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        /* Grid & Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-bottom: 50px;
+            perspective: 1000px;
+        }
+
+        .card {
+            background: var(--glass);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 30px;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transform-style: preserve-3d;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, transparent 100%);
+            pointer-events: none;
+        }
+
+        .card:hover {
+            transform: translateY(-10px) rotateX(5deg) rotateY(2deg);
+            border-color: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 30px 60px rgba(0, 0, 100, 0.3);
+        }
+
+        .card h3 {
+            color: #94a3b8;
+            font-size: 0.9rem;
+            font-weight: 400;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .card .value {
+            font-size: 3rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .card.scam .value {
+            color: var(--danger);
+            text-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
+        }
+
+        .card.secure .value {
+            color: var(--success);
+            text-shadow: 0 0 20px rgba(34, 197, 94, 0.4);
+        }
+
+        .card.total .value {
+            color: var(--primary);
+            text-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
+        }
+
+        /* Table Section */
+        .section-title {
+            font-size: 1.5rem;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .table-wrapper {
+            background: var(--glass);
+            backdrop-filter: blur(15px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th {
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.02);
+            color: #94a3b8;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        td {
+            padding: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            font-size: 0.95rem;
+            transition: background 0.3s ease;
+        }
+
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .tag {
+            padding: 6px 12px;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            display: inline-block;
+        }
+
+        .tag-scam {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .tag-important {
+            background: rgba(168, 85, 247, 0.1);
+            color: var(--secondary);
+            border: 1px solid rgba(168, 85, 247, 0.2);
+        }
+
+        .tag-normal {
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--primary);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+        }
+
+        .sender-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sender-email {
+            font-size: 0.8rem;
+            color: #64748b;
+        }
+
+        /* Scan Pulse Effect */
+        .pulse {
+            width: 8px;
+            height: 8px;
+            background: var(--success);
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 10px;
+            box-shadow: 0 0 0 rgba(34, 197, 94, 0.4);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+            }
+
+            70% {
+                box-shadow: 0 0 0 10px rgba(34, 197, 94, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+            }
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.5rem;
+            }
+
+            .card .value {
+                font-size: 2.5rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="bg-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <div class="container">
+        <header>
+            <div class="subtitle">Neural Defense Shield</div>
+            <h1>Email Intelligence</h1>
+        </header>
+
+        <div class="stats-grid">
+            <div class="card total">
+                <h3>Total Analyzed</h3>
+                <div class="value">
+                    <span class="icon">📊</span>
+                    1,245
+                </div>
+            </div>
+            <div class="card scam">
+                <h3>Threats Blocked</h3>
+                <div class="value">
+                    <span class="icon">🛡️</span>
+                    142
+                </div>
+            </div>
+            <div class="card secure">
+                <h3>Smart Replies</h3>
+                <div class="value">
+                    <span class="icon">✨</span>
+                    89
+                </div>
+            </div>
+        </div>
+
+        <div class="section-title">
+            <span class="pulse"></span> Live Activity Stream
+        </div>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>Sender Source</th>
+                        <th>Subject Analysis</th>
+                        <th>Risk Level</th>
+                        <th>Automated Action</th>
+                    </tr>
+                </thead>
+                <tbody id="log-body">
+                    <!-- Javascript will populate this -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const mockLogs = [
+            { time: '10:42:15 AM', sender: 'Security Alert', email: 'alert@paypa1-support.com', subject: 'Urgent: Account Suspended Access', status: 'SCAM', action: 'FORCE_BLOCK' },
+            { time: '10:38:04 AM', sender: 'Google HR', email: 'hr@google.com', subject: 'Interview Confirmation - Senior Eng', status: 'IMPORTANT', action: 'REPLY_DRAFTED' },
+            { time: '10:15:33 AM', sender: 'TechCrunch', email: 'newsletter@techcrunch.com', subject: 'Daily Tech Round up: AI News', status: 'NORMAL', action: 'LOGGED' },
+            { time: '09:55:12 AM', sender: 'Bank Secure', email: 'ceo@bank-secure-verify.net', subject: 'Wire Transfer Request #8821', status: 'SCAM', action: 'FORCE_BLOCK' },
+            { time: '09:30:45 AM', sender: 'Mom', email: 'mom@gmail.com', subject: 'Dinner tonight? 🍝', status: 'IMPORTANT', action: 'NOTIFIED' }
+        ];
+
+        const tbody = document.getElementById('log-body');
+
+        mockLogs.forEach(log => {
+            const tr = document.createElement('tr');
+            let statusClass = 'tag-normal';
+            if (log.status === 'SCAM') statusClass = 'tag-scam';
+            if (log.status === 'IMPORTANT') statusClass = 'tag-important';
+
+            tr.innerHTML = `
+                <td style="color: #64748b; font-family: monospace;">${log.time}</td>
+                <td>
+                    <div class="sender-info">
+                        <span style="font-weight: 600;">${log.sender}</span>
+                        <span class="sender-email">${log.email}</span>
+                    </div>
+                </td>
+                <td>${log.subject}</td>
+                <td><span class="tag ${statusClass}">${log.status}</span></td>
+                <td>
+                    <code style="background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; color: #94a3b8;">${log.action}</code>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        // Add 3D Tilt Effect on Mouse Move
+        document.querySelectorAll('.card').forEach(card => {
+            card.addEventListener('mousemove', (e) => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+
+                const centerX = rect.width / 2;
+                const centerY = rect.height / 2;
+
+                const rotateX = (y - centerY) / 10;
+                const rotateY = (centerX - x) / 10;
+
+                card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-10px)`;
+            });
+
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg) translateY(0)`;
+            });
+        });
+    </script>
+</body>
+
+</html>

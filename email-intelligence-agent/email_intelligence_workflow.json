@@ -1,0 +1,218 @@
+{
+    "name": "AI Email Intelligence (Groq Version - Fixed)",
+    "nodes": [
+        {
+            "parameters": {
+                "pollTimes": {
+                    "item": [
+                        {
+                            "mode": "everyMinute"
+                        }
+                    ]
+                },
+                "filters": {
+                    "readStatus": "unread"
+                }
+            },
+            "name": "Gmail Trigger",
+            "type": "n8n-nodes-base.gmailTrigger",
+            "typeVersion": 1,
+            "position": [
+                260,
+                300
+            ],
+            "credentials": {
+                "gmailOAuth2": {
+                    "id": "YOUR_GMAIL_CREDENTIALS_ID",
+                    "name": "Gmail Account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "https://api.groq.com/openai/v1/chat/completions",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "httpHeaderAuth",
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={{ JSON.stringify({\n  \"model\": \"llama3-70b-8192\",\n  \"messages\": [\n    {\n      \"role\": \"system\", \n      \"content\": \"You are an email intelligence agent. Analyze the email. Return ONLY a JSON object (no markdown) with fields: isScam (bool), scamReason (string), isSensitive (bool), sensitivityCategory (string), suggestedAction (BLOCK/NOTIFY/REPLY), replyDraft (string).\"\n    },\n    {\n      \"role\": \"user\", \n      \"content\": $('Gmail Trigger').item.json.snippet || \"No email content found\" \n    }\n  ],\n  \"response_format\": { \"type\": \"json_object\" }\n}) }}",
+                "options": {}
+            },
+            "name": "Groq AI",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.1,
+            "position": [
+                480,
+                300
+            ],
+            "credentials": {
+                "httpHeaderAuth": {
+                    "id": "YOUR_GROQ_CREDENTIAL_ID",
+                    "name": "Groq API Key"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "jsCode": "try {\n  const content = $input.all()[0].json.choices[0].message.content;\n  return JSON.parse(content);\n} catch (error) {\n  return { isScam: false, scamReason: \"Error parsing AI\", isSensitive: true, suggestedAction: \"NOTIFY\" };\n}"
+            },
+            "name": "Parse AI Resp",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                680,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "boolean": [
+                        {
+                            "value1": "={{ $json.isScam }}",
+                            "value2": true
+                        }
+                    ]
+                }
+            },
+            "name": "Is Scam?",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 1,
+            "position": [
+                880,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "chatId": "YOUR_TELEGRAM_CHAT_ID",
+                "text": "={{ '⚠️ SCAM BLOCKED\\nSubject: ' + $('Gmail Trigger').item.json.subject + '\\nReason: ' + $json.scamReason }}"
+            },
+            "name": "Notify Scam",
+            "type": "n8n-nodes-base.telegram",
+            "typeVersion": 1,
+            "position": [
+                1100,
+                100
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "boolean": [
+                        {
+                            "value1": "={{ $json.isSensitive }}",
+                            "value2": true
+                        }
+                    ]
+                }
+            },
+            "name": "Is Important?",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 1,
+            "position": [
+                1100,
+                400
+            ]
+        },
+        {
+            "parameters": {
+                "chatId": "YOUR_TELEGRAM_CHAT_ID",
+                "text": "={{ '🚨 IMPORTANT EMAIL\\nFrom: ' + $('Gmail Trigger').item.json.from + '\\nSubject: ' + $('Gmail Trigger').item.json.subject + '\\nCategory: ' + $json.sensitivityCategory }}"
+            },
+            "name": "Notify Important",
+            "type": "n8n-nodes-base.telegram",
+            "typeVersion": 1,
+            "position": [
+                1350,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "create",
+                "subject": "={{ 'Re: ' + $('Gmail Trigger').item.json.subject }}",
+                "htmlMessage": "={{ $json.replyDraft }}",
+                "toEmail": "={{ $('Gmail Trigger').item.json.from }}"
+            },
+            "name": "Draft Reply",
+            "type": "n8n-nodes-base.gmail",
+            "typeVersion": 1,
+            "position": [
+                1350,
+                500
+            ]
+        }
+    ],
+    "connections": {
+        "Gmail Trigger": {
+            "main": [
+                [
+                    {
+                        "node": "Groq AI",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Groq AI": {
+            "main": [
+                [
+                    {
+                        "node": "Parse AI Resp",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Parse AI Resp": {
+            "main": [
+                [
+                    {
+                        "node": "Is Scam?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Is Scam?": {
+            "main": [
+                [
+                    {
+                        "node": "Notify Scam",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Is Important?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Is Important?": {
+            "main": [
+                [
+                    {
+                        "node": "Notify Important",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Draft Reply",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                []
+            ]
+        }
+    }
+}
